@@ -1,0 +1,10 @@
+{
+  "name": "latex-sentinel",
+  "description": "LaTeX paper assistant for academic submissions. Provides a 7-step review pipeline, instant regex-based verification, a visual polish loop that analyses rendered PDF pages with the vision model, citation validation that reconciles CrossRef, OpenAlex, DBLP, and Semantic Scholar to flag fabricated and retracted references (plus an offline .bib integrity linter), and three-layer AI-writing detection (phrase catalog, structural heuristics, and stylometric metrics) with human-researcher-style rewrite suggestions. Every change is presented as a unified diff for approval with a git checkpoint before each batch.",
+  "version": "0.2.0",
+  "author": {
+    "name": "latex-sentinel"
+  },
+  "license": "MIT",
+  "keywords": ["latex", "tex", "academic", "writing", "review", "citations", "ai-detection"]
+}

@@ -1,0 +1,11 @@
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Plugin scratch output (visual-polish renders here)
+.latex-sentinel/

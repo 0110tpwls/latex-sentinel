@@ -1,0 +1,14 @@
+{
+  "name": "latex-sentinel",
+  "owner": {
+    "name": "latex-sentinel",
+    "email": "0110tpwls@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "latex-sentinel",
+      "source": "./",
+      "description": "LaTeX pre-submission paper QA: review pipeline, compile, instant verification, visual polish, multi-source citation reconciliation (fabrication + retraction detection), and three-layer AI-writing detection."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Reads the hook event JSON from stdin (the documented Claude Code hook protocol) rather than relying on environment variables, which are inconsistently populated across versions. Falls back silently if anything is missing.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const o=JSON.parse(d||'{}');const ti=o.tool_input||{};const p=(ti.file_path||ti.path||'').toLowerCase();if(p.endsWith('.tex')||p.endsWith('.bib')){console.log('[latex-sentinel] '+p+' changed. Run /latex-sentinel:verify for a fast check, or /latex-sentinel:review for the full pipeline.');}}catch(e){}});\""
+          }
+        ]
+      }
+    ]
+  }
+}
