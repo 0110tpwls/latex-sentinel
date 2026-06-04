@@ -30,21 +30,14 @@ json_escape() {
   printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g'
 }
 
-# First line of `<tool> --version`, trimmed; empty if it fails.
-first_version_line() {
-  "$1" --version 2>/dev/null | head -n1 | tr -d '\r'
-}
-
 emit_engine() {
-  # $1 = engine name, $2 = version-flag form (--version vs -version)
+  # $1 = engine name, $2 = version flag (default --version).
+  # TeX engines accept --version and print to stdout; Poppler's pdftoppm wants
+  # -v and prints to stderr. We merge stderr (2>&1) so either form is captured.
   local name="$1" vflag="${2:---version}" path ver present
   if path="$(command -v "$name" 2>/dev/null)"; then
     present="true"
-    if [ "$vflag" = "-version" ]; then
-      ver="$("$name" -version 2>/dev/null | head -n1 | tr -d '\r')"
-    else
-      ver="$(first_version_line "$name")"
-    fi
+    ver="$("$name" "$vflag" 2>&1 | head -n1 | tr -d '\r')"
   else
     present="false"; path=""; ver=""
   fi
@@ -66,7 +59,7 @@ emit_engine lualatex; echo ","
 emit_engine tectonic; echo ","
 emit_engine bibtex;   echo ","
 emit_engine biber;    echo ","
-emit_engine pdftoppm '-version'
+emit_engine pdftoppm '-v'
 echo ""
 echo "  },"
 

@@ -61,7 +61,12 @@ def http_json(url, headers=None):
         if e.code == 429:
             return "ratelimited", None
         return "error", "HTTP %s" % e.code
-    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+    except (OSError, ValueError) as e:
+        # OSError covers urllib.error.URLError, TimeoutError, ConnectionError,
+        # and (crucially on Python < 3.10) socket.timeout, which is NOT a
+        # TimeoutError there — a read timeout must degrade to 'error'
+        # (-> UNVERIFIED) rather than crash the whole run. ValueError catches a
+        # malformed JSON body.
         return "error", str(e)
 
 
@@ -301,10 +306,21 @@ def resolve(title, author=None, year=None, doi=None, breaker=None):
     sources = [("crossref", crossref_query), ("openalex", openalex_by_title),
                ("dblp", dblp_by_title)]
     confirmations, definitive_misses = 0, 0
+    strong_misses = 0   # misses from a high-recall source (S2/DBLP) or a 404
     confirming = []   # (record, sim) for sources that passed SIM_OK
 
+    # CrossRef and OpenAlex FREE-TEXT search have poor recall on some famous
+    # titles (e.g. the BERT paper is buried under same-titled derivatives — the
+    # very reason the DOI cross-confirmation below exists). A no-match from them
+    # is therefore WEAK evidence of fabrication. DBLP and S2 have better recall,
+    # and a 404 is authoritative, so those are STRONG misses. We refuse to call
+    # LIKELY-FABRICATED on weak misses alone: if only CrossRef/OpenAlex missed
+    # while DBLP/S2 were unreachable or rate-limited, that is "couldn't verify",
+    # not "fabricated".
+    HIGH_RECALL = {"dblp", "s2"}
+
     def consume(name, st, hits):
-        nonlocal confirmations, definitive_misses
+        nonlocal confirmations, definitive_misses, strong_misses
         m, sim = best_match(hits, title, year, author) if st == "ok" else (None, 0.0)
         if st == "ok" and m and sim >= SIM_OK:
             confirmations += 1
@@ -312,9 +328,12 @@ def resolve(title, author=None, year=None, doi=None, breaker=None):
             confirming.append((m, sim))
         elif st == "ok":
             definitive_misses += 1
+            if name in HIGH_RECALL:
+                strong_misses += 1
             result["sources"][name] = "no-match"
         elif st == "notfound":
             definitive_misses += 1
+            strong_misses += 1   # a 404 is authoritative
             result["sources"][name] = "not-found"
         else:
             result["sources"][name] = st  # error/ratelimited
@@ -331,6 +350,7 @@ def resolve(title, author=None, year=None, doi=None, breaker=None):
 
     result["confirmations"] = confirmations
     result["definitive_misses"] = definitive_misses
+    result["strong_misses"] = strong_misses
 
     # Pick the canonical confirming record: prefer one whose author and year
     # agree with the bib entry, then highest title similarity, then has a DOI.
@@ -389,10 +409,18 @@ def resolve(title, author=None, year=None, doi=None, breaker=None):
     elif confirmations == 1:
         result["verdict"] = "UNCERTAIN"
     else:
-        if definitive_misses >= 2:
+        if definitive_misses >= 2 and strong_misses >= 1:
             result["verdict"] = "LIKELY-FABRICATED"
-        elif definitive_misses == 1:
+        elif definitive_misses >= 1:
+            # Includes the case of >=2 misses that are ALL weak (CrossRef/OpenAlex
+            # free-text only) while DBLP/S2 were unavailable: report as UNCERTAIN
+            # for review, never as fabrication, since free-text recall is known
+            # to miss real papers.
             result["verdict"] = "UNCERTAIN"
+            if definitive_misses >= 2 and strong_misses == 0:
+                result["note"] = ("only low-recall sources (CrossRef/OpenAlex "
+                                  "free-text) missed; DBLP/S2 unavailable — "
+                                  "insufficient evidence to call fabrication")
         else:
             result["verdict"] = "UNVERIFIED"
 

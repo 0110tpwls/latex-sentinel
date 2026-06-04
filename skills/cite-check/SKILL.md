@@ -86,10 +86,12 @@ python ".../bib-resolve.py" --title "Attention is all you need" --author Vaswani
 | `OK` | **REAL** | DOI verified, or ≥2 sources agree | trust it; still surface any year/author mismatch flags |
 | `!!` | **REAL (bad DOI)** | paper is real but the given DOI doesn't resolve | offer to fix the DOI |
 | `? ` | **UNCERTAIN** | exactly one source confirms, or only one source could even be reached | report honestly as unverified; suggest adding a DOI |
-| `XX` | **LIKELY-FABRICATED** | ≥2 sources were reachable and **definitively** returned no match | **flag prominently and ask the user** — do not delete anything yourself |
+| `XX` | **LIKELY-FABRICATED** | ≥2 sources definitively returned no match **and at least one was a strong miss** (DBLP, Semantic Scholar, or a 404) | **flag prominently and ask the user** — do not delete anything yourself |
 | `..` | **UNVERIFIED** | sources were unreachable (network/rate-limit), so existence is unknown | not a failure; re-run later |
 
 **Crucial distinction the script enforces:** a fabrication call requires sources that *definitively* answered "no such work" (an HTTP 200 with zero matches, or a 404). A network error, timeout, or rate-limit yields **UNVERIFIED**, never LIKELY-FABRICATED. Never accuse a reference of being fake on the strength of a failed connection.
+
+**Weak vs. strong misses (why a real famous paper isn't flagged).** CrossRef and OpenAlex *free-text* search have poor recall on some well-known titles — the real BERT paper, for instance, is outranked by same-titled derivatives, so both return "no-match" for it. The script treats a free-text no-match from CrossRef/OpenAlex as a **weak** miss and a no-match from DBLP/Semantic Scholar (better recall) or any 404 as a **strong** miss. `LIKELY-FABRICATED` requires at least one *strong* miss; if only the two free-text engines missed while DBLP/S2 were unreachable or rate-limited, the verdict is **UNCERTAIN** (with a note), never fabrication. This is why a genuinely fake reference can read `UNCERTAIN` on a degraded network and `LIKELY-FABRICATED` once S2/DBLP are reachable — the script always errs toward "couldn't verify" over a false accusation.
 
 ### Retraction
 
