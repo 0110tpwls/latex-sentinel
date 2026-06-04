@@ -38,7 +38,7 @@ On Windows, install Poppler with `winget install --id=oschwartz10612.Poppler` or
 This repo is a self-hosting Claude Code plugin marketplace. On any device:
 
 ```
-/plugin marketplace add SayJean2/latex-sentinel
+/plugin marketplace add 0110tpwls/latex-sentinel
 /plugin install latex-sentinel@latex-sentinel
 ```
 
