@@ -23,11 +23,13 @@ Print a one-line summary of what you'll do and proceed.
 
 ## Step 1 — Compile
 
-Invoke the compile-tex skill (or run the equivalent yourself):
+Invoke the compile-tex skill (or run the equivalent yourself). It first reads the project's `.latex-sentinel.json` (written by `/latex-sentinel:setup-tex`) for the configured engine/command, and otherwise defaults to:
 
 ```bash
 latexmk -pdf -interaction=nonstopmode -halt-on-error "$MAIN_TEX"
 ```
+
+If **no LaTeX toolchain is on `PATH`**, stop and tell the user to run `/latex-sentinel:setup-tex` first — it lists the install options for their OS, installs the one they choose, and records it in `.latex-sentinel.json` so this step builds reliably. Don't attempt later steps without a compiler.
 
 Capture exit code and the last 80 lines of the log. If compilation fails, surface the errors to the user, propose fixes as `Edit` calls, and re-run until it compiles. Do **not** proceed to later steps with a paper that doesn't build.
 

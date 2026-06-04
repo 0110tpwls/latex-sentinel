@@ -16,20 +16,37 @@ If `$ARGUMENTS` is a path to a `.tex` file, use it. Otherwise find it: `Glob` fo
 Verify the toolchain:
 ```bash
 command -v latexmk >/dev/null 2>&1 || command -v pdflatex >/dev/null 2>&1 || {
-  echo "No LaTeX toolchain on PATH. Install TeX Live, MiKTeX, or TinyTeX."
+  echo "No LaTeX toolchain on PATH. Run /latex-sentinel:setup-tex to choose and install one"
+  echo "(TeX Live, MiKTeX, MacTeX, TinyTeX, or Tectonic), or install one manually."
   exit 2
 }
 ```
 
-## Compile
+If this fails, don't try to compile — tell the user to run `/latex-sentinel:setup-tex`, which lists the options for their OS, installs the one they pick, and records the choice in `.latex-sentinel.json`.
 
-Prefer `latexmk` (handles bibtex/biber/rerun automatically):
+## Read the project config
+
+If the project was set up with `/latex-sentinel:setup-tex`, a `.latex-sentinel.json` records exactly how to build this paper (engine + command). Prefer it over guessing:
 
 ```bash
+PAPER_DIR=$(dirname "$MAIN_TEX")
+CFG_CMD="$(python "${CLAUDE_PLUGIN_ROOT}/skills/setup-tex/scripts/read-config.py" \
+            --field compileCommand --dir "$PAPER_DIR" 2>/dev/null)"
+# (substitute python3 where that's the binary; read-config.py searches parent dirs too)
+```
+
+If `CFG_CMD` is non-empty, run **that** command with `"$MAIN_TEX"` appended instead of the default below. If it's empty (no config), fall back to auto-detecting `latexmk`/`pdflatex` as before — the config is an optimisation, not a requirement.
+
+## Compile
+
+Prefer the configured command, else `latexmk` (handles bibtex/biber/rerun automatically):
+
+```bash
+# configured:  $CFG_CMD "$MAIN_TEX"
 latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error "$MAIN_TEX"
 ```
 
-Fallback to manual passes if `latexmk` isn't available. **Do not use bash's `${VAR%.tex}` parameter expansion** — it breaks under PowerShell, `dash`, and plain `sh`. Use `basename`/`dirname` instead:
+Fallback to manual passes if neither a config command nor `latexmk` is available. **Do not use bash's `${VAR%.tex}` parameter expansion** — it breaks under PowerShell, `dash`, and plain `sh`. Use `basename`/`dirname` instead:
 
 ```bash
 PAPER_DIR=$(dirname "$MAIN_TEX")
