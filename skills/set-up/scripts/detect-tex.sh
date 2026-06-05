@@ -10,7 +10,7 @@
 #   recommend     — the install route this script suggests for the OS
 #
 # Pure shell, no network, never exits non-zero on a missing tool (a missing
-# engine is the normal case this script exists to report). The setup-tex skill
+# engine is the normal case this script exists to report). The set-up skill
 # parses this to decide what to offer the user.
 
 set -u
@@ -59,7 +59,9 @@ emit_engine lualatex; echo ","
 emit_engine tectonic; echo ","
 emit_engine bibtex;   echo ","
 emit_engine biber;    echo ","
-emit_engine pdftoppm '-v'
+emit_engine pdftoppm '-v'; echo ","
+emit_engine python3;  echo ","
+emit_engine python
 echo ""
 echo "  },"
 

@@ -16,33 +16,38 @@ If `$ARGUMENTS` is a path to a `.tex` file, use it. Otherwise find it: `Glob` fo
 Verify the toolchain:
 ```bash
 command -v latexmk >/dev/null 2>&1 || command -v pdflatex >/dev/null 2>&1 || {
-  echo "No LaTeX toolchain on PATH. Run /latex-sentinel:setup-tex to choose and install one"
-  echo "(TeX Live, MiKTeX, MacTeX, TinyTeX, or Tectonic), or install one manually."
+  echo "No LaTeX toolchain on PATH. Run /latex-sentinel:set-up to check your toolchain"
+  echo "and see how to install one (TinyTeX is the lightweight, no-sudo option; TeX Live"
+  echo "is the full distribution), then restart Claude Code."
   exit 2
 }
 ```
 
-If this fails, don't try to compile — tell the user to run `/latex-sentinel:setup-tex`, which lists the options for their OS, installs the one they pick, and records the choice in `.latex-sentinel.json`.
+If this fails, don't try to compile — tell the user to run `/latex-sentinel:set-up`, which checks the toolchain, shows how to install what's missing (TinyTeX or TeX Live), and records the engine choice in `.latex-sentinel.json`.
 
 ## Read the project config
 
-If the project was set up with `/latex-sentinel:setup-tex`, a `.latex-sentinel.json` records exactly how to build this paper (engine + command). Prefer it over guessing:
+If the project was set up with `/latex-sentinel:set-up`, a `.latex-sentinel.json` records exactly how to build this paper (engine + command). Prefer it over guessing:
 
 ```bash
 PAPER_DIR=$(dirname "$MAIN_TEX")
-CFG_CMD="$(python "${CLAUDE_PLUGIN_ROOT}/skills/setup-tex/scripts/read-config.py" \
+CFG_CMD="$(python "${CLAUDE_PLUGIN_ROOT}/skills/set-up/scripts/read-config.py" \
             --field compileCommand --dir "$PAPER_DIR" 2>/dev/null)"
 # (substitute python3 where that's the binary; read-config.py searches parent dirs too)
 ```
 
-If `CFG_CMD` is non-empty, run **that** command with `"$MAIN_TEX"` appended instead of the default below. If it's empty (no config), fall back to auto-detecting `latexmk`/`pdflatex` as before — the config is an optimisation, not a requirement.
+If `CFG_CMD` is non-empty, run **that** command with the `.tex` path appended instead of the default below. If it's empty (no config), fall back to auto-detecting `latexmk`/`pdflatex` as before — the config is an optimisation, not a requirement.
+
+**Run the configured command through `sh -c`, not as a bare `$CFG_CMD`.** `compileCommand` is a multi-word string (`latexmk -pdf …`); under `zsh` (the default macOS shell) an unquoted `$CFG_CMD` is **not** word-split, so `$CFG_CMD "$MAIN_TEX"` tries to exec a binary literally named "latexmk -pdf …" and fails with "command not found". Use a POSIX shell to split it:
 
 ## Compile
 
 Prefer the configured command, else `latexmk` (handles bibtex/biber/rerun automatically):
 
 ```bash
-# configured:  $CFG_CMD "$MAIN_TEX"
+# configured (zsh-safe — sh -c performs the word-splitting):
+sh -c "$CFG_CMD \"$MAIN_TEX\""
+# default when there is no config:
 latexmk -pdf -interaction=nonstopmode -halt-on-error -file-line-error "$MAIN_TEX"
 ```
 

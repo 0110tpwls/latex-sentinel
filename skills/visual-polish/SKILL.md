@@ -33,10 +33,10 @@ Arguments: `<pdf> <out-dir> <dpi> <max-pages>`. Defaults: dpi=150, max-pages=30.
 
 The script writes `page-001.png`, `page-002.png`, ... in the output directory and prints the final list of files on stdout. If `pdftoppm` is not installed, the script exits with code 2 and a hint — surface that to the user (install Poppler; see the plugin README) and stop.
 
-**Non-standard `pdftoppm` location.** If the project's `.latex-sentinel.json` (written by `/latex-sentinel:setup-tex`) records a `tools.pdftoppm` path, prepend its directory to `PATH` before calling the renderer so the script finds it:
+**Non-standard `pdftoppm` location.** If the project's `.latex-sentinel.json` (written by `/latex-sentinel:set-up`) records a `tools.pdftoppm` path, prepend its directory to `PATH` before calling the renderer so the script finds it:
 
 ```bash
-PP="$(python "${CLAUDE_PLUGIN_ROOT}/skills/setup-tex/scripts/read-config.py" --field tools.pdftoppm --dir "$(dirname "$PDF")" 2>/dev/null)"
+PP="$(python "${CLAUDE_PLUGIN_ROOT}/skills/set-up/scripts/read-config.py" --field tools.pdftoppm --dir "$(dirname "$PDF")" 2>/dev/null)"
 [ -n "$PP" ] && PATH="$(dirname "$PP"):$PATH"
 # (substitute python3 where that's the binary)
 ```

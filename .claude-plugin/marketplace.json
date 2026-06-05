@@ -8,7 +8,7 @@
     {
       "name": "latex-sentinel",
       "source": "./",
-      "description": "LaTeX pre-submission paper QA: guided TeX toolchain setup (detect/install/configure a compiler), review pipeline, compile, instant verification, visual polish, multi-source citation reconciliation (fabrication + retraction detection), and three-layer AI-writing detection."
+      "description": "LaTeX pre-submission paper QA: TeX toolchain doctor (check/advise/configure a compiler), review pipeline, compile, instant verification, page-count, visual polish, multi-source citation reconciliation (fabrication + retraction detection), and three-layer AI-writing detection."
     }
   ]
 }
